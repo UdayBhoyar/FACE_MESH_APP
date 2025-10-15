@@ -21,6 +21,22 @@ class GazeAccessibilityService : AccessibilityService() {
         fun performSwipe(direction: String) {
             instance?.performSwipeInternal(direction)
         }
+        
+        fun takeScreenshot() {
+            instance?.performScreenshot()
+        }
+        
+        fun performBack() {
+            instance?.performGlobalAction(GLOBAL_ACTION_BACK)
+        }
+        
+        fun performRecents() {
+            instance?.performGlobalAction(GLOBAL_ACTION_RECENTS)
+        }
+        
+        fun performNotifications() {
+            instance?.performGlobalAction(GLOBAL_ACTION_NOTIFICATIONS)
+        }
     }
 
     override fun onServiceConnected() {
@@ -105,7 +121,7 @@ class GazeAccessibilityService : AccessibilityService() {
     }
 
     private fun performClickOnClickableParent(node: AccessibilityNodeInfo) {
-        var currentNode = node
+        var currentNode: AccessibilityNodeInfo? = node
         while (currentNode != null) {
             if (currentNode.isClickable) {
                 currentNode.performAction(AccessibilityNodeInfo.ACTION_CLICK)
@@ -127,6 +143,19 @@ class GazeAccessibilityService : AccessibilityService() {
             Log.d("GazeAccessibility", "Performed swipe: $direction")
         } catch (e: Exception) {
             Log.e("GazeAccessibility", "Error performing swipe: ${e.message}")
+        }
+    }
+    
+    private fun performScreenshot() {
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                performGlobalAction(GLOBAL_ACTION_TAKE_SCREENSHOT)
+                Log.d("GazeAccessibility", "Screenshot taken")
+            } else {
+                Log.e("GazeAccessibility", "Screenshot requires Android 9 or higher")
+            }
+        } catch (e: Exception) {
+            Log.e("GazeAccessibility", "Error taking screenshot: ${e.message}")
         }
     }
 }

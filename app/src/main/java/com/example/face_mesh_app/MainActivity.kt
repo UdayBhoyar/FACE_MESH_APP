@@ -46,6 +46,7 @@ class MainActivity : AppCompatActivity(), LandmarkerListener {
     private lateinit var btnMinus: Button
     private lateinit var btnCalibrate: Button
     private lateinit var toggleOverlay: ToggleButton
+    private lateinit var toggleVoiceCommands: ToggleButton
     private lateinit var tvSensitivity: TextView
     
     // Calibration UI
@@ -95,6 +96,7 @@ class MainActivity : AppCompatActivity(), LandmarkerListener {
         btnMinus = findViewById(R.id.btn_minus)
         btnCalibrate = findViewById(R.id.btn_calibrate)
         toggleOverlay = findViewById(R.id.toggle_overlay)
+        toggleVoiceCommands = findViewById(R.id.toggle_voice_commands)
         tvSensitivity = findViewById(R.id.tv_sensitivity)
         
         // Calibration UI
@@ -184,6 +186,32 @@ class MainActivity : AppCompatActivity(), LandmarkerListener {
                 stopOverlayService()
             }
         }
+
+        // Voice Commands toggle
+        toggleVoiceCommands.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                if (checkMicrophonePermission()) {
+                    startVoiceCommandService()
+                    // Show help on first use
+                    val prefs = getSharedPreferences("settings", MODE_PRIVATE)
+                    if (!prefs.getBoolean("voice_help_shown", false)) {
+                        VoiceCommandHelper.showVoiceCommandsHelp(this)
+                        prefs.edit().putBoolean("voice_help_shown", true).apply()
+                    }
+                } else {
+                    requestMicrophonePermission()
+                    toggleVoiceCommands.isChecked = false
+                }
+            } else {
+                stopVoiceCommandService()
+            }
+        }
+        
+        // Long press on voice toggle to show help
+        toggleVoiceCommands.setOnLongClickListener {
+            VoiceCommandHelper.showVoiceCommandsHelp(this)
+            true
+        }
     }
 
     private fun startOverlayWithPermission() {
@@ -199,6 +227,32 @@ class MainActivity : AppCompatActivity(), LandmarkerListener {
 
     private fun stopOverlayService() {
         stopService(Intent(this, GazeOverlayService::class.java))
+    }
+
+    private fun checkMicrophonePermission(): Boolean {
+        return ContextCompat.checkSelfPermission(
+            this, 
+            Manifest.permission.RECORD_AUDIO
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun requestMicrophonePermission() {
+        ActivityCompat.requestPermissions(
+            this, 
+            arrayOf(Manifest.permission.RECORD_AUDIO), 
+            102
+        )
+    }
+
+    private fun startVoiceCommandService() {
+        val intent = Intent(this, VoiceCommandService::class.java)
+        ContextCompat.startForegroundService(this, intent)
+        Toast.makeText(this, "Voice Commands Enabled", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun stopVoiceCommandService() {
+        stopService(Intent(this, VoiceCommandService::class.java))
+        Toast.makeText(this, "Voice Commands Disabled", Toast.LENGTH_SHORT).show()
     }
 
     override fun onResume() {
@@ -433,11 +487,23 @@ class MainActivity : AppCompatActivity(), LandmarkerListener {
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == 101 && allPermissionsGranted()) {
-            startCamera()
-        } else {
-            Toast.makeText(this, "Permissions not granted by the user.", Toast.LENGTH_SHORT).show()
-            finish()
+        when (requestCode) {
+            101 -> {
+                if (allPermissionsGranted()) {
+                    startCamera()
+                } else {
+                    Toast.makeText(this, "Camera permission not granted.", Toast.LENGTH_SHORT).show()
+                    finish()
+                }
+            }
+            102 -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    startVoiceCommandService()
+                    toggleVoiceCommands.isChecked = true
+                } else {
+                    Toast.makeText(this, "Microphone permission required for voice commands", Toast.LENGTH_SHORT).show()
+                }
+            }
         }
     }
 
@@ -579,5 +645,9 @@ class MainActivity : AppCompatActivity(), LandmarkerListener {
         super.onDestroy()
         backgroundExecutor.shutdown()
         faceLandmarkerHelper.clearFaceLandmarker()
+        
+        // Save voice command state
+        val prefs = getSharedPreferences("settings", MODE_PRIVATE)
+        prefs.edit().putBoolean("voice_commands_enabled", toggleVoiceCommands.isChecked).apply()
     }
 }

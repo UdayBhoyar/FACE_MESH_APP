@@ -1,4 +1,7 @@
 <resources>
     <string name="app_name">Face_Mesh_App</string>
-    <string name="accessibility_service_description">Gaze cursor accessibility service for hands-free navigation</string>
+    <string name="accessibility_service_description">Gaze cursor accessibility service for hands-free navigation. Also enables voice commands, screenshots, and system navigation.</string>
+    
+    <!-- Voice Command Strings -->
+    <string name="voice_commands_help">Voice Commands:\n\n• "Open WhatsApp"\n• "Open Camera"\n• "Open [app name]"\n• "Home" or "Home Screen"\n• "Take Screenshot"\n• "Go Back"\n• "Recent Apps"\n• "Notifications"</string>
 </resources>

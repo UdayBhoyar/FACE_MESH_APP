@@ -1,0 +1,119 @@
+================================================================================
+                    FACE MESH APP - VOICE COMMANDS GUIDE
+================================================================================
+
+QUICK START:
+1. Open the app
+2. Tap "Voice OFF" button (top-right) to enable
+3. Grant microphone permission
+4. Start speaking commands!
+
+================================================================================
+                            VOICE COMMANDS LIST
+================================================================================
+
+📱 OPEN APPS (Say: "Open [app name]" or just "[app name]")
+────────────────────────────────────────────────────────────
+  ✓ WhatsApp          ✓ YouTube           ✓ Gmail
+  ✓ Camera            ✓ Chrome            ✓ Maps
+  ✓ Instagram         ✓ Facebook          ✓ Messenger
+  ✓ Twitter           ✓ Telegram          ✓ Spotify
+  ✓ Netflix           ✓ Phone             ✓ Messages
+  ✓ Calculator        ✓ Calendar          ✓ Clock
+  ✓ Contacts          ✓ Settings          ✓ Play Store
+
+  Examples:
+    • "Open WhatsApp"
+    • "Camera"
+    • "Launch YouTube"
+    • "Open Chrome browser"
+
+────────────────────────────────────────────────────────────
+
+🏠 NAVIGATION
+────────────────────────────────────────────────────────────
+  ✓ "Home" / "Home Screen"        → Go to home screen
+  ✓ "Back" / "Go Back"            → Go back one screen
+  ✓ "Recent Apps" / "Multitask"   → Show recent apps
+  ✓ "Notifications"               → Open notification shade
+
+────────────────────────────────────────────────────────────
+
+📸 ACTIONS
+────────────────────────────────────────────────────────────
+  ✓ "Take Screenshot"             → Capture screen (Android 9+)
+  ✓ "Screen Capture"              → Capture screen (Android 9+)
+
+────────────────────────────────────────────────────────────
+
+================================================================================
+                              BACKGROUND MODE
+================================================================================
+
+Voice commands work even when the app is in the background!
+
+✅ Notification shown: "Voice Commands Active"
+✅ Always listening for your commands
+✅ Stop anytime via notification button
+
+To stop voice commands:
+  • Option 1: Open app and toggle "Voice ON" to "Voice OFF"
+  • Option 2: Use notification → Tap "Stop Voice Commands"
+
+================================================================================
+                                  TIPS
+================================================================================
+
+🎤 SPEAKING TIPS:
+  • Speak clearly in a normal voice
+  • No need to shout or whisper
+  • Works best in quiet environments
+  • Natural language supported
+
+📱 APP TIPS:
+  • Most common apps are recognized
+  • Can open any installed app by name
+  • Try app's full name if short name doesn't work
+  • Long-press "Voice Commands" button for help dialog
+
+🔧 TROUBLESHOOTING:
+  • Not working? Check microphone permission
+  • Toggle voice commands off and on to restart
+  • Ensure accessibility service is enabled
+  • Check notification to confirm service is running
+
+================================================================================
+                            REQUIRED PERMISSIONS
+================================================================================
+
+✓ Microphone           - To hear voice commands
+✓ Accessibility        - For screenshots and system actions
+✓ Query Packages       - To find installed apps
+
+================================================================================
+                                PRIVACY
+================================================================================
+
+🔒 Your privacy matters:
+  • Voice processed locally by Android
+  • No data sent to external servers
+  • No voice recordings stored
+  • All processing happens on your device
+
+================================================================================
+                            CURRENT FEATURES
+================================================================================
+
+✅ Eye gaze tracking
+✅ Mouth-open gesture for clicking
+✅ Voice commands (NEW!)
+✅ System-wide overlay
+✅ Calibration system
+✅ Background operation
+✅ Accessibility integration
+
+================================================================================
+
+Need help? Long-press the "Voice Commands" button in the app!
+
+================================================================================
