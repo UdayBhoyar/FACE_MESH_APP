@@ -240,18 +240,23 @@ class VoiceCommandService : Service() {
     }
 
     private fun processVoiceCommand(command: String) {
-        Log.d(TAG, "Processing command: $command")
+        Log.d(TAG, "=== Processing command: '$command' ===")
         
         // Show brief notification that command was recognized
         showCommandRecognizedNotification(command)
         
+        // Also show toast for immediate feedback
+        showToast("Command: $command")
+        
         when {
             // Open specific apps - WhatsApp variations
             command.contains("whatsapp") || command.contains("whats app") -> {
+                Log.d(TAG, "WhatsApp command detected")
                 openApp("com.whatsapp")
             }
             // Camera
             command.contains("camera") -> {
+                Log.d(TAG, "Camera command detected")
                 openCamera()
             }
             // YouTube
@@ -349,27 +354,69 @@ class VoiceCommandService : Service() {
 
     private fun openApp(packageName: String) {
         try {
+            Log.d(TAG, "Attempting to open app: $packageName")
+            
+            // Check if app is installed
+            val installedApps = packageManager.getInstalledApplications(0)
+            val isInstalled = installedApps.any { it.packageName == packageName }
+            
+            if (!isInstalled) {
+                Log.e(TAG, "App not installed: $packageName")
+                showToast("App not installed: $packageName")
+                return
+            }
+            
             val intent = packageManager.getLaunchIntentForPackage(packageName)
             if (intent != null) {
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
                 startActivity(intent)
-                Log.d(TAG, "Opened app: $packageName")
+                Log.d(TAG, "Successfully opened app: $packageName")
+                showToast("Opening ${getAppName(packageName)}")
             } else {
-                Log.e(TAG, "App not found: $packageName")
+                Log.e(TAG, "Could not get launch intent for: $packageName")
+                showToast("Cannot open app: $packageName")
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error opening app: ${e.message}")
+            Log.e(TAG, "Error opening app $packageName: ${e.message}", e)
+            showToast("Error: ${e.message}")
+        }
+    }
+    
+    private fun getAppName(packageName: String): String {
+        return try {
+            val appInfo = packageManager.getApplicationInfo(packageName, 0)
+            packageManager.getApplicationLabel(appInfo).toString()
+        } catch (e: Exception) {
+            packageName
+        }
+    }
+    
+    private fun showToast(message: String) {
+        handler.post {
+            android.widget.Toast.makeText(applicationContext, message, android.widget.Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun openCamera() {
         try {
+            Log.d(TAG, "Attempting to open camera")
             val intent = Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE)
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            startActivity(intent)
-            Log.d(TAG, "Opened camera")
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            
+            // Check if there's an app that can handle this intent
+            if (intent.resolveActivity(packageManager) != null) {
+                startActivity(intent)
+                Log.d(TAG, "Successfully opened camera")
+                showToast("Opening Camera")
+            } else {
+                Log.e(TAG, "No camera app found")
+                showToast("No camera app available")
+            }
         } catch (e: Exception) {
-            Log.e(TAG, "Error opening camera: ${e.message}")
+            Log.e(TAG, "Error opening camera: ${e.message}", e)
+            showToast("Camera error: ${e.message}")
         }
     }
 
@@ -394,14 +441,23 @@ class VoiceCommandService : Service() {
 
     private fun goToHomeScreen() {
         try {
+            Log.d(TAG, "Attempting to go to home screen")
             val intent = Intent(Intent.ACTION_MAIN).apply {
                 addCategory(Intent.CATEGORY_HOME)
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }
-            startActivity(intent)
-            Log.d(TAG, "Navigated to home screen")
+            
+            if (intent.resolveActivity(packageManager) != null) {
+                startActivity(intent)
+                Log.d(TAG, "Successfully navigated to home screen")
+                showToast("Going Home")
+            } else {
+                Log.e(TAG, "No home launcher found")
+                showToast("Home navigation failed")
+            }
         } catch (e: Exception) {
-            Log.e(TAG, "Error going to home: ${e.message}")
+            Log.e(TAG, "Error going to home: ${e.message}", e)
+            showToast("Home error: ${e.message}")
         }
     }
 
