@@ -41,6 +41,16 @@ class OverlayView(context: Context, attrs: AttributeSet?) : View(context, attrs)
         color = Color.GREEN
         style = Paint.Style.FILL
     }
+
+    // Calibration dots
+    private val calibrationDotPaint = Paint().apply {
+        color = Color.WHITE
+        style = Paint.Style.FILL
+    }
+    private val calibrationActiveDotPaint = Paint().apply {
+        color = Color.RED
+        style = Paint.Style.FILL
+    }
     private val calibrationTargetPaint = Paint().apply {
         color = Color.YELLOW
         style = Paint.Style.FILL
@@ -48,6 +58,11 @@ class OverlayView(context: Context, attrs: AttributeSet?) : View(context, attrs)
 
     private var cursorPosition: PointF? = null
     private var calibrationTarget: PointF? = null // deprecated UI element, no longer used
+    
+    // Calibration state
+    private var calibrationDots = mutableListOf<PointF>()
+    private var activeDotIndex = -1
+    private var showCalibrationDots = false
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
@@ -78,7 +93,13 @@ class OverlayView(context: Context, attrs: AttributeSet?) : View(context, attrs)
             }
         }
 
-        // Calibration target removed from UI
+        // Draw calibration dots
+        if (showCalibrationDots) {
+            calibrationDots.forEachIndexed { index, dot ->
+                val paint = if (index == activeDotIndex) calibrationActiveDotPaint else calibrationDotPaint
+                canvas.drawCircle(dot.x, dot.y, 20f, paint)
+            }
+        }
 
         // Draw the main cursor
         cursorPosition?.let {
@@ -100,11 +121,6 @@ class OverlayView(context: Context, attrs: AttributeSet?) : View(context, attrs)
         invalidate()
     }
 
-    fun setCursorColor(isClicking: Boolean) {
-        cursorPaint.color = if (isClicking) Color.RED else Color.GREEN
-        invalidate()
-    }
-
     fun showCalibrationTarget(target: PointF?) { /* no-op */ }
 
     fun setInputImageInfo(width: Int, height: Int) {
@@ -114,6 +130,27 @@ class OverlayView(context: Context, attrs: AttributeSet?) : View(context, attrs)
 
     fun setShowLandmarks(show: Boolean) {
         showLandmarks = show
+        invalidate()
+    }
+
+    fun setCursorColor(isMouthOpen: Boolean) {
+        cursorPaint.color = if (isMouthOpen) Color.RED else Color.GREEN
+        invalidate()
+    }
+
+    fun setCalibrationDots(dots: List<PointF>) {
+        calibrationDots.clear()
+        calibrationDots.addAll(dots)
+        invalidate()
+    }
+
+    fun setActiveDotIndex(index: Int) {
+        activeDotIndex = index
+        invalidate()
+    }
+
+    fun setShowCalibrationDots(show: Boolean) {
+        showCalibrationDots = show
         invalidate()
     }
 }

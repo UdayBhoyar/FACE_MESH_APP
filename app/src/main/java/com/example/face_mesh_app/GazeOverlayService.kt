@@ -3,11 +3,13 @@ package com.example.face_mesh_app
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.PixelFormat
 import android.os.Build
+import android.os.IBinder
 import android.view.Gravity
 import android.view.WindowManager
 import androidx.camera.core.AspectRatio
@@ -16,23 +18,36 @@ import androidx.camera.core.ImageAnalysis
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.LifecycleService
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.LifecycleRegistry
 import com.google.mediapipe.tasks.vision.core.RunningMode
+import com.google.mediapipe.tasks.vision.facelandmarker.FaceLandmarkerResult
+import com.google.mediapipe.tasks.vision.facelandmarker.FaceLandmarker.FACE_LANDMARKS_LEFT_EYE
+import com.google.mediapipe.tasks.vision.facelandmarker.FaceLandmarker.FACE_LANDMARKS_RIGHT_EYE
 import java.util.concurrent.Executors
 
-class GazeOverlayService : LifecycleService(), FaceLandmarkerHelper.LandmarkerListener {
+class GazeOverlayService : Service(), FaceLandmarkerHelper.LandmarkerListener, LifecycleOwner {
     companion object {
         const val ACTION_STOP = "com.example.face_mesh_app.ACTION_STOP"
+        const val ACTION_PAUSE_CAMERA = "com.example.face_mesh_app.ACTION_PAUSE_CAMERA"
+        const val ACTION_RESUME_CAMERA = "com.example.face_mesh_app.ACTION_RESUME_CAMERA"
     }
 
     private lateinit var windowManager: WindowManager
     private lateinit var overlayView: OverlayView
     private val executor = Executors.newSingleThreadExecutor()
     private lateinit var faceLandmarkerHelper: FaceLandmarkerHelper
+    private var isCameraActive = false
+    private lateinit var lifecycleRegistry: LifecycleRegistry
 
     override fun onCreate() {
         super.onCreate()
         startAsForeground()
+
+        // Initialize lifecycle
+        lifecycleRegistry = LifecycleRegistry(this)
+        lifecycleRegistry.markState(Lifecycle.State.CREATED)
 
         windowManager = applicationContext.getSystemService(Context.WINDOW_SERVICE) as WindowManager
         overlayView = OverlayView(this, null)
@@ -60,15 +75,22 @@ class GazeOverlayService : LifecycleService(), FaceLandmarkerHelper.LandmarkerLi
             landmarkerListener = this
         )
 
+        lifecycleRegistry.markState(Lifecycle.State.STARTED)
         startCamera()
     }
 
     override fun onDestroy() {
         super.onDestroy()
+        lifecycleRegistry.markState(Lifecycle.State.DESTROYED)
         try { windowManager.removeView(overlayView) } catch (_: Exception) {}
         executor.shutdown()
         faceLandmarkerHelper.clearFaceLandmarker()
     }
+
+    override fun onBind(intent: Intent?): IBinder? = null
+
+    override val lifecycle: Lifecycle
+        get() = lifecycleRegistry
 
     private fun startAsForeground() {
         val channelId = "gaze_overlay"
@@ -97,14 +119,25 @@ class GazeOverlayService : LifecycleService(), FaceLandmarkerHelper.LandmarkerLi
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent?.action == ACTION_STOP) {
-            stopSelf()
-            return START_NOT_STICKY
+        when (intent?.action) {
+            ACTION_STOP -> {
+                stopSelf()
+                return START_NOT_STICKY
+            }
+            ACTION_PAUSE_CAMERA -> {
+                stopCamera()
+            }
+            ACTION_RESUME_CAMERA -> {
+                startCamera()
+            }
         }
-        return super.onStartCommand(intent, flags, startId)
+        return START_STICKY
     }
 
     private fun startCamera() {
+        if (isCameraActive) return
+        isCameraActive = true
+        
         val cameraProviderFuture = ProcessCameraProvider.getInstance(applicationContext)
         cameraProviderFuture.addListener({
             val cameraProvider = cameraProviderFuture.get()
@@ -144,9 +177,17 @@ class GazeOverlayService : LifecycleService(), FaceLandmarkerHelper.LandmarkerLi
             val cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
             try {
                 cameraProvider.unbindAll()
-                cameraProvider.bindToLifecycle(/* lifecycleOwner= */this, cameraSelector, analyzer)
-            } catch (_: Exception) {}
+                cameraProvider.bindToLifecycle(this, cameraSelector, analyzer)
+            } catch (e: Exception) {
+                // If binding fails, we'll continue without camera
+                isCameraActive = false
+            }
         }, ContextCompat.getMainExecutor(applicationContext))
+    }
+
+    private fun stopCamera() {
+        isCameraActive = false
+        // Camera will be unbind when service stops
     }
 
     override fun onError(error: String, errorCode: Int) { }
@@ -155,6 +196,16 @@ class GazeOverlayService : LifecycleService(), FaceLandmarkerHelper.LandmarkerLi
     private var smoothedX = 0f
     private var smoothedY = 0f
     private var eyeSensitivity: Float = 3.0f
+    private var mouthWasOpen = false
+    
+    // Head movement detection for swipes
+    private var lastHeadPosition = android.graphics.PointF(0.5f, 0.5f)
+    private var headMovementThreshold = 0.05f
+    private var swipeCooldown = 0L
+    private val swipeCooldownDuration = 500L
+    private var eyesClosed = false
+    private var lastEyesClosedTime = 0L
+    private val eyesClosedThreshold = 300L
 
     override fun onResults(resultBundle: FaceLandmarkerHelper.ResultBundle) {
         val result = resultBundle.result
@@ -206,14 +257,62 @@ class GazeOverlayService : LifecycleService(), FaceLandmarkerHelper.LandmarkerLi
         // Trigger tap once when mouth transitions from closed->open
         if (isMouthOpen && !mouthWasOpen) {
             mouthWasOpen = true
-            // Note: Accessibility service removed - tap functionality disabled
-            // GazeAccessibilityService.instance?.performTap(smoothedX, smoothedY)
+            performTap(smoothedX, smoothedY)
         } else if (!isMouthOpen) {
             mouthWasOpen = false
         }
+
+        // --- Head Movement Detection for Swipes ---
+        // For now, we'll use a simple approach - detect head movement when mouth is open
+        if (isMouthOpen) {
+            detectHeadMovement(result, frameWidth, frameHeight)
+        }
     }
 
-    private var mouthWasOpen = false
+    private fun performTap(x: Float, y: Float) {
+        // Use accessibility service for reliable clicking
+        GazeAccessibilityService.performTap(x, y)
+    }
+
+
+    private fun detectHeadMovement(result: FaceLandmarkerResult, frameWidth: Int, frameHeight: Int) {
+        try {
+            val landmarks = result.faceLandmarks().firstOrNull() ?: return
+            val noseTip = landmarks[1]
+            val currentHeadPosition = android.graphics.PointF(noseTip.x(), noseTip.y())
+            
+            val deltaX = currentHeadPosition.x - lastHeadPosition.x
+            val deltaY = currentHeadPosition.y - lastHeadPosition.y
+            
+            val currentTime = System.currentTimeMillis()
+            if (kotlin.math.abs(deltaX) > headMovementThreshold || kotlin.math.abs(deltaY) > headMovementThreshold) {
+                if (currentTime - swipeCooldown > swipeCooldownDuration) {
+                    performSwipe(deltaX, deltaY)
+                    swipeCooldown = currentTime
+                }
+            }
+            
+            lastHeadPosition = currentHeadPosition
+        } catch (e: Exception) {
+            // Ignore errors
+        }
+    }
+
+    private fun performSwipe(deltaX: Float, deltaY: Float) {
+        val swipeDirection = when {
+            kotlin.math.abs(deltaX) > kotlin.math.abs(deltaY) -> {
+                if (deltaX > 0) "right" else "left"
+            }
+            else -> {
+                if (deltaY > 0) "down" else "up"
+            }
+        }
+        
+        when (swipeDirection) {
+            "left" -> GazeAccessibilityService.performSwipe("right")
+            "right" -> GazeAccessibilityService.performSwipe("left")
+            "up" -> GazeAccessibilityService.performSwipe("down")
+            "down" -> GazeAccessibilityService.performSwipe("up")
+        }
+    }
 }
-
-

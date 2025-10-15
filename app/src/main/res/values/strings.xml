@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Face_Mesh_App</string>
+    <string name="accessibility_service_description">Gaze cursor accessibility service for hands-free navigation</string>
 </resources>

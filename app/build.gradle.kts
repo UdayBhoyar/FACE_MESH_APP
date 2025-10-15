@@ -27,7 +27,7 @@ android {
         // --- SOLUTION: This is the correct way to ensure native libraries are included ---
         // This tells Gradle to package the native (.so) libraries for these CPU architectures
         ndk {
-            abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86")
+            abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64", "x86")
         }
     }
 
@@ -73,7 +73,7 @@ dependencies {
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
 
     // --- MediaPipe Vision Task Library (for Face Landmarker) ---
-    implementation("com.google.mediapipe:tasks-vision:0.10.14")
+    implementation("com.google.mediapipe:tasks-vision:0.10.9")
 
     // --- CameraX Libraries (for easy camera access and management) ---
     val cameraxVersion = "1.3.1"
@@ -84,9 +84,6 @@ dependencies {
 
     // --- Kotlin Coroutines (for managing background tasks) ---
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
-
-    // Lifecycle service for foreground service with lifecycle owner
-    implementation("androidx.lifecycle:lifecycle-service:2.8.4")
 
     // --- Testing Libraries ---
     testImplementation("junit:junit:4.13.2")

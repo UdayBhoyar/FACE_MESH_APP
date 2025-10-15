@@ -52,6 +52,14 @@
             android:text="-"
             android:textSize="24sp"/>
 
+        <Button
+            android:id="@+id/btn_calibrate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Calibrate"
+            android:textSize="12sp"/>
+
         <ToggleButton
             android:id="@+id/toggle_overlay"
             android:layout_width="wrap_content"
@@ -67,6 +75,62 @@
             android:layout_marginTop="8dp"
             android:textColor="#FFFFFF"
             android:text="Sensitivity: 1.0"/>
+    </LinearLayout>
+
+    <!-- Calibration UI -->
+    <LinearLayout
+        android:id="@+id/calibration_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:background="#80000000"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <TextView
+            android:id="@+id/tv_calibration_instruction"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="50dp"
+            android:text="Look at the red dot and click Capture"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp"
+            android:textStyle="bold"/>
+
+        <Button
+            android:id="@+id/btn_capture"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="20dp"
+            android:text="Capture"
+            android:textSize="16sp"
+            android:padding="16dp"/>
+
+        <Button
+            android:id="@+id/btn_calibration_done"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="10dp"
+            android:text="Done"
+            android:textSize="16sp"
+            android:padding="16dp"/>
+
+        <TextView
+            android:id="@+id/tv_calibration_progress"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="20dp"
+            android:text="Progress: 0/16"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"/>
+
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
