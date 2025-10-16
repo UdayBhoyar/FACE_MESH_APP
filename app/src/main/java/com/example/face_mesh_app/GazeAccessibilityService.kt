@@ -27,15 +27,18 @@ class GazeAccessibilityService : AccessibilityService() {
         }
         
         fun performBack() {
-            instance?.performGlobalAction(GLOBAL_ACTION_BACK)
+            val result = instance?.performGlobalAction(GLOBAL_ACTION_BACK) ?: false
+            Log.d("GazeAccessibility", "performBack result: $result")
         }
         
         fun performRecents() {
-            instance?.performGlobalAction(GLOBAL_ACTION_RECENTS)
+            val result = instance?.performGlobalAction(GLOBAL_ACTION_RECENTS) ?: false
+            Log.d("GazeAccessibility", "performRecents result: $result")
         }
         
         fun performNotifications() {
-            instance?.performGlobalAction(GLOBAL_ACTION_NOTIFICATIONS)
+            val result = instance?.performGlobalAction(GLOBAL_ACTION_NOTIFICATIONS) ?: false
+            Log.d("GazeAccessibility", "performNotifications result: $result")
         }
     }
 
@@ -149,13 +152,16 @@ class GazeAccessibilityService : AccessibilityService() {
     private fun performScreenshot() {
         try {
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
-                performGlobalAction(GLOBAL_ACTION_TAKE_SCREENSHOT)
-                Log.d("GazeAccessibility", "Screenshot taken")
+                val result = performGlobalAction(GLOBAL_ACTION_TAKE_SCREENSHOT)
+                Log.d("GazeAccessibility", "Screenshot taken, result: $result")
+                if (!result) {
+                    Log.e("GazeAccessibility", "Screenshot action failed - check permissions")
+                }
             } else {
-                Log.e("GazeAccessibility", "Screenshot requires Android 9 or higher")
+                Log.e("GazeAccessibility", "Screenshot requires Android 9 or higher (API 28+), current: ${android.os.Build.VERSION.SDK_INT}")
             }
         } catch (e: Exception) {
-            Log.e("GazeAccessibility", "Error taking screenshot: ${e.message}")
+            Log.e("GazeAccessibility", "Error taking screenshot: ${e.message}", e)
         }
     }
 }

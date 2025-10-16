@@ -462,24 +462,88 @@ class VoiceCommandService : Service() {
     }
 
     private fun takeScreenshot() {
-        // Use accessibility service to take screenshot
-        GazeAccessibilityService.takeScreenshot()
-        Log.d(TAG, "Screenshot command sent")
+        try {
+            Log.d(TAG, "Attempting to take screenshot")
+            val service = GazeAccessibilityService.getInstance()
+            
+            if (service == null) {
+                Log.e(TAG, "Accessibility service not running")
+                showToast("Enable Accessibility Service first")
+                return
+            }
+            
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                GazeAccessibilityService.takeScreenshot()
+                Log.d(TAG, "Screenshot command sent successfully")
+                showToast("Taking Screenshot")
+            } else {
+                Log.e(TAG, "Screenshot requires Android 9+")
+                showToast("Screenshot requires Android 9 or higher")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error taking screenshot: ${e.message}", e)
+            showToast("Screenshot failed: ${e.message}")
+        }
     }
 
     private fun goBack() {
-        GazeAccessibilityService.performBack()
-        Log.d(TAG, "Back navigation triggered")
+        try {
+            Log.d(TAG, "Attempting to go back")
+            val service = GazeAccessibilityService.getInstance()
+            
+            if (service == null) {
+                Log.e(TAG, "Accessibility service not running")
+                showToast("Enable Accessibility Service first")
+                return
+            }
+            
+            GazeAccessibilityService.performBack()
+            Log.d(TAG, "Back navigation triggered successfully")
+            showToast("Going Back")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error going back: ${e.message}", e)
+            showToast("Back navigation failed: ${e.message}")
+        }
     }
 
     private fun showRecentApps() {
-        GazeAccessibilityService.performRecents()
-        Log.d(TAG, "Recent apps triggered")
+        try {
+            Log.d(TAG, "Attempting to show recent apps")
+            val service = GazeAccessibilityService.getInstance()
+            
+            if (service == null) {
+                Log.e(TAG, "Accessibility service not running")
+                showToast("Enable Accessibility Service first")
+                return
+            }
+            
+            GazeAccessibilityService.performRecents()
+            Log.d(TAG, "Recent apps triggered successfully")
+            showToast("Opening Recent Apps")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error showing recent apps: ${e.message}", e)
+            showToast("Recent apps failed: ${e.message}")
+        }
     }
 
     private fun openNotifications() {
-        GazeAccessibilityService.performNotifications()
-        Log.d(TAG, "Notifications triggered")
+        try {
+            Log.d(TAG, "Attempting to open notifications")
+            val service = GazeAccessibilityService.getInstance()
+            
+            if (service == null) {
+                Log.e(TAG, "Accessibility service not running")
+                showToast("Enable Accessibility Service first")
+                return
+            }
+            
+            GazeAccessibilityService.performNotifications()
+            Log.d(TAG, "Notifications triggered successfully")
+            showToast("Opening Notifications")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error opening notifications: ${e.message}", e)
+            showToast("Notifications failed: ${e.message}")
+        }
     }
 
     private fun showCommandRecognizedNotification(command: String) {
