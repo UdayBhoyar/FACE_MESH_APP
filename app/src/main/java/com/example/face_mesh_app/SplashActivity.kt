@@ -10,7 +10,8 @@ class SplashActivity : AppCompatActivity() {
     private val splashDelay = 1000L
     private val handler = Handler(Looper.getMainLooper())
     private val runnable = Runnable {
-        startActivity(Intent(this, MainActivity::class.java))
+        // After the splash, navigate to the Start screen (user presses Start to continue)
+        startActivity(Intent(this, StartActivity::class.java))
         finish()
     }
 

@@ -38,6 +38,10 @@
         </activity>
 
         <activity
+            android:name="com.example.face_mesh_app.StartActivity"
+            android:exported="true" />
+
+        <activity
             android:name="com.example.face_mesh_app.MainActivity"
             android:exported="true" />
 
