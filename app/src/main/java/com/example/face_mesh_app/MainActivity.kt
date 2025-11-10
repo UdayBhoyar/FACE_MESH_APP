@@ -58,6 +58,7 @@ class MainActivity : AppCompatActivity(), LandmarkerListener {
 
     private lateinit var faceLandmarkerHelper: FaceLandmarkerHelper
     private lateinit var backgroundExecutor: ExecutorService
+    private lateinit var headPoseDetector: HeadPoseDetector
 
     // --- CONFIG ---
     private val SMOOTH_ALPHA = 0.2f
@@ -85,6 +86,9 @@ class MainActivity : AppCompatActivity(), LandmarkerListener {
     private var eyesClosed = false
     private var lastEyesClosedTime = 0L
     private val eyesClosedThreshold = 300L // Must keep eyes closed for 300ms before swipes work
+    
+    // Current head direction
+    private var currentHeadDirection: String = "center"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -115,6 +119,17 @@ class MainActivity : AppCompatActivity(), LandmarkerListener {
 
         // Initialize background executor for MediaPipe
         backgroundExecutor = Executors.newSingleThreadExecutor()
+
+        // Initialize head pose detector
+        headPoseDetector = HeadPoseDetector(this)
+
+        // Show startup toast indicating model load status
+        val modelStatus = if (headPoseDetector.isModelLoaded()) {
+            "Head model: Loaded"
+        } else {
+            "Head model: Not loaded (landmark fallback active)"
+        }
+        Toast.makeText(this, modelStatus, Toast.LENGTH_LONG).show()
 
         // Create the FaceLandmarkerHelper
         faceLandmarkerHelper = FaceLandmarkerHelper(
@@ -592,27 +607,47 @@ class MainActivity : AppCompatActivity(), LandmarkerListener {
     private fun detectHeadMovement(result: FaceLandmarkerResult, frameWidth: Int, frameHeight: Int) {
         try {
             val landmarks = result.faceLandmarks().firstOrNull() ?: return
+
+            // Use hybrid head pose detector (TFLite model + landmarks)
+            val headPoseResult = headPoseDetector.detectHeadPose(result)
             
-            // Use nose tip as reference point for head position
-            val noseTip = landmarks[1] // Nose tip landmark
-            val currentHeadPosition = PointF(noseTip.x(), noseTip.y())
-            
-            // Calculate head movement
-            val deltaX = currentHeadPosition.x - lastHeadPosition.x
-            val deltaY = currentHeadPosition.y - lastHeadPosition.y
-            
-            // Check if movement is significant and cooldown has passed
-            val currentTime = System.currentTimeMillis()
-            if (kotlin.math.abs(deltaX) > headMovementThreshold || kotlin.math.abs(deltaY) > headMovementThreshold) {
-                if (currentTime - swipeCooldown > swipeCooldownDuration) {
-                    performSwipe(deltaX, deltaY)
-                    swipeCooldown = currentTime
+            // Update UI if direction changed
+            if (headPoseResult.directionChanged) {
+                currentHeadDirection = headPoseResult.direction
+                runOnUiThread {
+                    val confidenceText = if (headPoseResult.confidence > 0) {
+                        " (${(headPoseResult.confidence * 100).toInt()}%)"
+                    } else ""
+                    Toast.makeText(
+                        this@MainActivity,
+                        "Head: ${headPoseResult.direction}$confidenceText [${headPoseResult.source}]",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
+                Log.d("HeadPose", "Direction: ${headPoseResult.direction}, " +
+                        "Confidence: ${headPoseResult.confidence}, Source: ${headPoseResult.source}")
             }
-            
-            lastHeadPosition = currentHeadPosition
+
+            // Legacy swipe detection using nose position delta
+            if (landmarks.size > 1) {
+                val noseTip = landmarks[1]
+                val currentHeadPosition = PointF(noseTip.x(), noseTip.y())
+                val deltaX = currentHeadPosition.x - lastHeadPosition.x
+                val deltaY = currentHeadPosition.y - lastHeadPosition.y
+                val currentTime = System.currentTimeMillis()
+                
+                if (kotlin.math.abs(deltaX) > headMovementThreshold || 
+                    kotlin.math.abs(deltaY) > headMovementThreshold) {
+                    if (currentTime - swipeCooldown > swipeCooldownDuration) {
+                        performSwipe(deltaX, deltaY)
+                        swipeCooldown = currentTime
+                    }
+                }
+                
+                lastHeadPosition = currentHeadPosition
+            }
         } catch (e: Exception) {
-            // Ignore errors in head movement detection
+            Log.e("HeadPose", "Error in detectHeadMovement: ${e.message}", e)
         }
     }
 
@@ -645,6 +680,7 @@ class MainActivity : AppCompatActivity(), LandmarkerListener {
         super.onDestroy()
         backgroundExecutor.shutdown()
         faceLandmarkerHelper.clearFaceLandmarker()
+        headPoseDetector.close()
         
         // Save voice command state
         val prefs = getSharedPreferences("settings", MODE_PRIVATE)

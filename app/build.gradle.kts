@@ -48,6 +48,11 @@ android {
         jvmTarget = "1.8"
     }
 
+    // TensorFlow Lite configuration
+    aaptOptions {
+        noCompress("tflite")
+    }
+
     // --- SOLUTION 2: Additional packaging configuration ---
     // This ensures native libraries are properly included and handles conflicts
     packaging {
@@ -74,6 +79,10 @@ dependencies {
 
     // --- MediaPipe Vision Task Library (for Face Landmarker) ---
     implementation("com.google.mediapipe:tasks-vision:0.10.9")
+
+    // --- TensorFlow Lite (for head pose model inference) ---
+    implementation("org.tensorflow:tensorflow-lite:2.14.0")
+    implementation("org.tensorflow:tensorflow-lite-support:0.4.4")
 
     // --- CameraX Libraries (for easy camera access and management) ---
     val cameraxVersion = "1.3.1"
