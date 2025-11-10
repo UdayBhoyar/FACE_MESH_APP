@@ -44,7 +44,6 @@ class MainActivity : AppCompatActivity(), LandmarkerListener {
     // Calibration UI removed
     private lateinit var btnPlus: Button
     private lateinit var btnMinus: Button
-    private lateinit var btnCalibrate: Button
     private lateinit var toggleOverlay: ToggleButton
     private lateinit var toggleVoiceCommands: ToggleButton
     private lateinit var tvSensitivity: TextView
@@ -96,9 +95,8 @@ class MainActivity : AppCompatActivity(), LandmarkerListener {
 
         cameraPreviewView = findViewById(R.id.camera_preview)
         overlayView = findViewById(R.id.overlay_view)
-        btnPlus = findViewById(R.id.btn_plus)
-        btnMinus = findViewById(R.id.btn_minus)
-        btnCalibrate = findViewById(R.id.btn_calibrate)
+    btnPlus = findViewById(R.id.btn_plus)
+    btnMinus = findViewById(R.id.btn_minus)
         toggleOverlay = findViewById(R.id.toggle_overlay)
         toggleVoiceCommands = findViewById(R.id.toggle_voice_commands)
         tvSensitivity = findViewById(R.id.tv_sensitivity)
@@ -173,10 +171,7 @@ class MainActivity : AppCompatActivity(), LandmarkerListener {
 
         updateSensitivityLabel()
 
-        // Calibration button
-        btnCalibrate.setOnClickListener {
-            startCalibration()
-        }
+        // Calibrate button removed from UI; calibration can still be started via other flows if needed
 
         // Calibration buttons
         btnCapture.setOnClickListener {
